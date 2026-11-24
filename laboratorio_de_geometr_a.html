@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio Geométrico Interactivo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Transiciones suaves para los elementos visuales */
+        .tile, .cube-layer-cell {
+            transition: all 0.3s ease;
+        }
+        
+        /* Ocultar pestañas no activas */
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.4s;
+        }
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Estilos personalizados para los rangos (sliders) */
+        input[type=range] {
+            accent-color: #3b82f6; /* Blue-500 */
+        }
+
+        /* Cubo 3D Styles */
+        #cube-container {
+            perspective: 1000px;
+            transform: rotateX(-30deg) rotateY(45deg);
+            transform-style: preserve-3d;
+            width: 200px;
+            height: 200px;
+            margin: 1rem auto;
+            position: relative;
+        }
+        .cubito {
+            position: absolute;
+            transform-style: preserve-3d;
+            left: 50%;
+            top: 50%;
+        }
+        .cubito .face {
+            position: absolute;
+            box-sizing: border-box;
+            border: 1px solid rgba(0,0,0,0.15);
+        }
+        .cubito .face-top { background-color: #fca5a5; } /* Rojo claro */
+        .cubito .face-left { background-color: #ef4444; } /* Rojo medio */
+        .cubito .face-right { background-color: #b91c1c; } /* Rojo oscuro */
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen">
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-10">
+        <div class="max-w-5xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+            <h1 class="text-2xl font-bold text-slate-700 flex items-center gap-2">
+                <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5"></path></svg>
+                Laboratorio Matemático
+            </h1>
+            
+            <!-- Navegación de Pestañas -->
+            <nav class="flex space-x-1 bg-slate-100 p-1 rounded-lg">
+                <button onclick="openTab('tab1')" id="btn-tab1" class="px-4 py-2 text-sm font-medium rounded-md bg-white shadow-sm text-blue-600 transition-colors">1. Baldosas</button>
+                <button onclick="openTab('tab2')" id="btn-tab2" class="px-4 py-2 text-sm font-medium rounded-md text-slate-600 hover:text-slate-800 hover:bg-slate-50 transition-colors">2. Finca</button>
+                <button onclick="openTab('tab3')" id="btn-tab3" class="px-4 py-2 text-sm font-medium rounded-md text-slate-600 hover:text-slate-800 hover:bg-slate-50 transition-colors">3. Dados</button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-4 py-8">
+
+        <!-- ========================================== -->
+        <!-- PESTAÑA 1: BALDOSAS (Raíz Cuadrada Exacta) -->
+        <!-- ========================================== -->
+        <div id="tab1" class="tab-content active">
+            <div class="grid md:grid-cols-2 gap-8">
+                <!-- Panel de Control -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <h2 class="text-xl font-bold text-blue-600 mb-2">Construyendo el mayor cuadrado</h2>
+                    <p class="text-slate-600 mb-6 text-sm">¿Cuál es el cuadrado más grande que podemos formar si tenemos un número limitado de baldosas?</p>
+                    
+                    <div class="mb-6">
+                        <label class="block text-sm font-semibold mb-2 text-slate-700">Número total de baldosas: <span id="val1-display" class="text-blue-600 text-lg">10</span></label>
+                        <input type="range" id="slider1" min="1" max="250" value="10" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                    </div>
+
+                    <div class="bg-blue-50 p-4 rounded-xl mb-4 border border-blue-100">
+                        <h3 class="text-sm font-bold text-blue-800 mb-1">Reflexiona:</h3>
+                        <p class="text-sm text-blue-700">Si intentas hacer un cuadrado de 3x3, ¿cuántas baldosas necesitas? ¿Y para uno de 4x4? Fíjate en cómo crecen los lados respecto al total.</p>
+                    </div>
+
+                    <div class="space-y-3 text-slate-700" id="text1-dynamic">
+                        <!-- Generado por JS -->
+                    </div>
+                </div>
+
+                <!-- Panel Visual -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col items-center justify-center min-h-[400px]">
+                    <div id="grid1-container" class="mb-4">
+                        <!-- El cuadrado principal -->
+                    </div>
+                    <div class="w-full pt-4 border-t border-slate-100">
+                        <p class="text-sm font-medium text-slate-500 mb-2 text-center">Baldosas sobrantes:</p>
+                        <div id="leftovers1-container" class="flex flex-wrap gap-1 justify-center max-h-32 overflow-y-auto">
+                            <!-- Las sobrantes -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- PESTAÑA 2: FINCA (Área y Perímetro)        -->
+        <!-- ========================================== -->
+        <div id="tab2" class="tab-content">
+            <div class="grid md:grid-cols-2 gap-8">
+                <!-- Panel de Control -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <h2 class="text-xl font-bold text-emerald-600 mb-2">Cercando la finca</h2>
+                    <p class="text-slate-600 mb-6 text-sm">Conocemos la superficie (área) de una finca cuadrada. ¿Cuánta alambrada (perímetro) necesitamos para rodearla?</p>
+                    
+                    <div class="mb-6">
+                        <label class="block text-sm font-semibold mb-2 text-slate-700">Superficie (Área en m²): <span id="val2-display" class="text-emerald-600 text-lg">900</span></label>
+                        <input type="range" id="slider2" min="10" max="1000" step="10" value="900" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer" style="accent-color: #10b981;">
+                    </div>
+
+                    <div class="bg-emerald-50 p-4 rounded-xl mb-4 border border-emerald-100">
+                        <h3 class="text-sm font-bold text-emerald-800 mb-1">Paso a paso:</h3>
+                        <p class="text-sm text-emerald-700 mb-2"><strong>1º:</strong> El área de un cuadrado es <em>Lado × Lado (L²)</em>. Para hallar el lado a partir del área usamos la operación inversa...</p>
+                        <p class="text-sm text-emerald-700"><strong>2º:</strong> El perímetro es la suma de los bordes externos. ¿Cuántos lados tiene el cuadrado?</p>
+                    </div>
+
+                    <div class="space-y-3 text-slate-700" id="text2-dynamic">
+                        <!-- Generado por JS -->
+                    </div>
+                </div>
+
+                <!-- Panel Visual -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col items-center justify-center min-h-[400px]">
+                    <div class="relative flex items-center justify-center transition-all duration-500 ease-in-out" id="finca-visual" style="width: 200px; height: 200px;">
+                        <!-- Finca -->
+                        <div class="absolute inset-0 bg-emerald-200 border-4 border-emerald-600 border-dashed rounded-sm flex items-center justify-center z-10 transition-all duration-300">
+                            <span class="font-bold text-emerald-800 text-center" id="finca-area-text">900 m²</span>
+                        </div>
+                        <!-- Etiquetas de lado -->
+                        <div class="absolute -top-6 left-1/2 -translate-x-1/2 text-sm font-semibold text-slate-600" id="finca-top-text">L = 30m</div>
+                        <div class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-sm font-semibold text-slate-600" id="finca-bottom-text">L = 30m</div>
+                        <div class="absolute top-1/2 -left-12 -translate-y-1/2 text-sm font-semibold text-slate-600" id="finca-left-text">L = 30m</div>
+                        <div class="absolute top-1/2 -right-12 -translate-y-1/2 text-sm font-semibold text-slate-600" id="finca-right-text">L = 30m</div>
+                    </div>
+                    <p class="mt-12 text-center font-medium text-slate-700 bg-slate-100 px-4 py-2 rounded-full" id="finca-perimeter-text">Perímetro total = 120m</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- PESTAÑA 3: DADOS (Raíz Cúbica Exacta)      -->
+        <!-- ========================================== -->
+        <div id="tab3" class="tab-content">
+            <div class="grid md:grid-cols-2 gap-8">
+                <!-- Panel de Control -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <h2 class="text-xl font-bold text-red-600 mb-2">Construyendo un cubo perfecto</h2>
+                    <p class="text-slate-600 mb-6 text-sm">Ahora estamos en 3D. ¿Cuál es el mayor cubo sólido que puedes formar apilando pequeños dados unitarios?</p>
+                    
+                    <div class="mb-6">
+                        <label class="block text-sm font-semibold mb-2 text-slate-700">Número total de dados: <span id="val3-display" class="text-red-600 text-lg">50</span></label>
+                        <input type="range" id="slider3" min="1" max="150" value="50" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer" style="accent-color: #ef4444;">
+                    </div>
+
+                    <div class="bg-red-50 p-4 rounded-xl mb-4 border border-red-100">
+                        <h3 class="text-sm font-bold text-red-800 mb-1">Visualizando en 3D:</h3>
+                        <p class="text-sm text-red-700">Un cubo tiene las mismas dimensiones en ancho, alto y profundidad. El volumen total es la <strong>Arista al cubo (A³)</strong>.</p>
+                    </div>
+
+                    <div class="space-y-3 text-slate-700" id="text3-dynamic">
+                        <!-- Generado por JS -->
+                    </div>
+                </div>
+
+                <!-- Panel Visual -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col items-center min-h-[400px]">
+                    <h3 class="text-sm font-bold text-slate-500 mb-4" id="cube-layers-title">Cubo en 3D:</h3>
+                    
+                    <!-- Contenedor 3D -->
+                    <div id="cube-container"></div>
+
+                    <div class="w-full pt-4 border-t border-slate-100 mt-auto">
+                        <p class="text-sm font-medium text-slate-500 mb-2 text-center">Dados sobrantes:</p>
+                        <div id="leftovers3-container" class="flex flex-wrap gap-1 justify-center max-h-24 overflow-y-auto">
+                            <!-- Generado por JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // --- NAVEGACIÓN DE PESTAÑAS ---
+        function openTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+
+            // Estilos de botones
+            const buttons = ['btn-tab1', 'btn-tab2', 'btn-tab3'];
+            buttons.forEach(btn => {
+                const el = document.getElementById(btn);
+                if(btn.includes(tabId.slice(-1))) {
+                    el.className = "px-4 py-2 text-sm font-medium rounded-md bg-white shadow-sm text-blue-600 transition-colors";
+                } else {
+                    el.className = "px-4 py-2 text-sm font-medium rounded-md text-slate-600 hover:text-slate-800 hover:bg-slate-50 transition-colors";
+                }
+            });
+        }
+
+        // --- PESTAÑA 1: BALDOSAS ---
+        const slider1 = document.getElementById('slider1');
+        const val1Display = document.getElementById('val1-display');
+        const text1Dynamic = document.getElementById('text1-dynamic');
+        const grid1Container = document.getElementById('grid1-container');
+        const leftovers1Container = document.getElementById('leftovers1-container');
+
+        function updateTab1() {
+            const total = parseInt(slider1.value);
+            val1Display.innerText = total;
+
+            // Lógica matemática
+            const lado = Math.floor(Math.sqrt(total));
+            const usadas = lado * lado;
+            const sobrantes = total - usadas;
+
+            // Actualizar texto
+            text1Dynamic.innerHTML = `
+                <div class="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                    <p class="mb-1">El cuadrado perfecto más grande menor o igual a ${total} es <strong>${usadas}</strong>.</p>
+                    <p class="text-blue-700 font-bold mb-1">Paso 1: Lado = √${usadas} = ${lado} baldosas</p>
+                    <p class="text-slate-500 text-sm">Comprobación: ${lado} × ${lado} = ${usadas} baldosas usadas.</p>
+                </div>
+                <div class="p-3 bg-red-50 rounded-lg border border-red-100 text-red-700">
+                    <p><strong>Sobran:</strong> ${total} - ${usadas} = <strong>${sobrantes} baldosas</strong></p>
+                </div>
+            `;
+
+            // Dibujar Cuadrado Principal
+            grid1Container.innerHTML = '';
+            const squareDiv = document.createElement('div');
+            squareDiv.style.display = 'grid';
+            squareDiv.style.gridTemplateColumns = `repeat(${lado}, minmax(0, 1fr))`;
+            squareDiv.style.gap = '2px';
+            
+            // Ajustar tamaño visual para que no se salga
+            const cellSize = Math.max(8, Math.min(30, 200 / lado)); 
+
+            for(let i=0; i<usadas; i++){
+                const tile = document.createElement('div');
+                tile.className = 'bg-blue-500 rounded-sm tile';
+                tile.style.width = `${cellSize}px`;
+                tile.style.height = `${cellSize}px`;
+                squareDiv.appendChild(tile);
+            }
+            grid1Container.appendChild(squareDiv);
+
+            // Dibujar Sobrantes
+            leftovers1Container.innerHTML = '';
+            for(let i=0; i<sobrantes; i++){
+                const tile = document.createElement('div');
+                tile.className = 'bg-slate-300 rounded-sm tile';
+                tile.style.width = '12px';
+                tile.style.height = '12px';
+                leftovers1Container.appendChild(tile);
+            }
+        }
+        slider1.addEventListener('input', updateTab1);
+        updateTab1(); // Init
+
+
+        // --- PESTAÑA 2: FINCA ---
+        const slider2 = document.getElementById('slider2');
+        const val2Display = document.getElementById('val2-display');
+        const text2Dynamic = document.getElementById('text2-dynamic');
+        
+        const fincaVisual = document.getElementById('finca-visual');
+        const fincaAreaText = document.getElementById('finca-area-text');
+        const fincaTop = document.getElementById('finca-top-text');
+        const fincaBottom = document.getElementById('finca-bottom-text');
+        const fincaLeft = document.getElementById('finca-left-text');
+        const fincaRight = document.getElementById('finca-right-text');
+        const fincaPerimeter = document.getElementById('finca-perimeter-text');
+
+        function updateTab2() {
+            const area = parseInt(slider2.value);
+            val2Display.innerText = area;
+
+            // Lógica matemática
+            const lado = Math.sqrt(area);
+            // Formatear a 2 decimales si no es entero
+            const ladoFormatted = Number.isInteger(lado) ? lado : lado.toFixed(2);
+            const perimetro = (lado * 4);
+            const perimetroFormatted = Number.isInteger(perimetro) ? perimetro : perimetro.toFixed(2);
+
+            // Actualizar texto
+            text2Dynamic.innerHTML = `
+                <div class="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                    <p class="text-emerald-700 font-bold mb-1">Paso 1: Lado = √Área</p>
+                    <p class="text-slate-600">Lado = √${area} = <strong>${ladoFormatted} m</strong></p>
+                </div>
+                <div class="p-3 bg-emerald-50 rounded-lg border border-emerald-200">
+                    <p class="text-emerald-800 font-bold mb-1">Paso 2: Perímetro = Lado × 4</p>
+                    <p class="text-slate-700">Alambrada necesaria: ${ladoFormatted} × 4 = <strong>${perimetroFormatted} metros lineales</strong></p>
+                </div>
+            `;
+
+            // Actualizar visualización
+            fincaAreaText.innerText = `${area} m²`;
+            const ladoTxt = `L = ${ladoFormatted}m`;
+            fincaTop.innerText = ladoTxt;
+            fincaBottom.innerText = ladoTxt;
+            fincaLeft.innerText = ladoTxt;
+            fincaRight.innerText = ladoTxt;
+            fincaPerimeter.innerText = `Perímetro total = ${perimetroFormatted}m`;
+
+            // Efecto visual: escalar ligeramente el cuadrado dependiendo del área
+            // Mapear de 10-1000 a un tamaño base de 100px-240px
+            const minSize = 100;
+            const maxSize = 240;
+            const scaleSize = minSize + ((area - 10) / 990) * (maxSize - minSize);
+            fincaVisual.style.width = `${scaleSize}px`;
+            fincaVisual.style.height = `${scaleSize}px`;
+        }
+        slider2.addEventListener('input', updateTab2);
+        updateTab2(); // Init
+
+
+        // --- PESTAÑA 3: DADOS ---
+        const slider3 = document.getElementById('slider3');
+        const val3Display = document.getElementById('val3-display');
+        const text3Dynamic = document.getElementById('text3-dynamic');
+        
+        const cubeTitle = document.getElementById('cube-layers-title');
+        const cubeContainer = document.getElementById('cube-container');
+        const leftovers3Container = document.getElementById('leftovers3-container');
+
+        function updateTab3() {
+            const total = parseInt(slider3.value);
+            val3Display.innerText = total;
+
+            // Lógica matemática
+            const arista = Math.floor(Math.cbrt(total));
+            const usados = Math.pow(arista, 3);
+            const sobrantes = total - usados;
+
+            // Actualizar texto
+            text3Dynamic.innerHTML = `
+                <div class="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                    <p class="mb-1">El cubo perfecto más grande menor o igual a ${total} es <strong>${usados}</strong>.</p>
+                    <p class="text-red-700 font-bold mb-1">Paso 1: Arista = ³√${usados} = ${arista} dados</p>
+                    <p class="text-slate-500 text-sm">Comprobación: ${arista} × ${arista} × ${arista} = ${usados} dados usados en total.</p>
+                </div>
+                <div class="p-3 bg-red-50 rounded-lg border border-red-100 text-red-700">
+                    <p><strong>Sobran:</strong> ${total} - ${usados} = <strong>${sobrantes} dados</strong></p>
+                </div>
+            `;
+
+            cubeTitle.innerText = `Cubo de arista ${arista} (${usados} dados en total):`;
+
+            // Dibujar Cubo 3D
+            cubeContainer.innerHTML = '';
+            
+            if (arista > 0) {
+                const maxSize = 120; // Tamaño base del bloque completo para que encaje
+                const size = maxSize / arista;
+                const offset = (arista - 1) * size / 2;
+
+                for(let x=0; x<arista; x++) {
+                    for(let y=0; y<arista; y++) {
+                        for(let z=0; z<arista; z++) {
+                            const cubito = document.createElement('div');
+                            cubito.className = 'cubito';
+                            
+                            // Posición matemática XYZ partiendo del centro
+                            const px = (x * size) - offset;
+                            const py = (y * size) - offset;
+                            const pz = (z * size) - offset;
+                            
+                            cubito.style.transform = `translate3d(${px}px, ${py}px, ${pz}px)`;
+                            
+                            // Crear caras visibles del dado (Top, Left, Right)
+                            const caras = ['top', 'left', 'right'];
+                            caras.forEach(cara => {
+                                const faceDiv = document.createElement('div');
+                                faceDiv.className = `face face-${cara}`;
+                                faceDiv.style.width = `${size}px`;
+                                faceDiv.style.height = `${size}px`;
+                                faceDiv.style.marginLeft = `-${size/2}px`;
+                                faceDiv.style.marginTop = `-${size/2}px`;
+                                
+                                if (cara === 'top') faceDiv.style.transform = `rotateX(90deg) translateZ(${size/2}px)`;
+                                if (cara === 'left') faceDiv.style.transform = `rotateY(-90deg) translateZ(${size/2}px)`;
+                                if (cara === 'right') faceDiv.style.transform = `translateZ(${size/2}px)`;
+                                
+                                cubito.appendChild(faceDiv);
+                            });
+                            
+                            cubeContainer.appendChild(cubito);
+                        }
+                    }
+                }
+            }
+
+            // Dibujar Sobrantes
+            leftovers3Container.innerHTML = '';
+            for(let i=0; i<sobrantes; i++){
+                const dice = document.createElement('div');
+                dice.className = 'bg-red-300 rounded-sm border border-red-500';
+                dice.style.width = '10px';
+                dice.style.height = '10px';
+                leftovers3Container.appendChild(dice);
+            }
+        }
+        slider3.addEventListener('input', updateTab3);
+        updateTab3(); // Init
+
+    </script>
+</body>
+</html>
